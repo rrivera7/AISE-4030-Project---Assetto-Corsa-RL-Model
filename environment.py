@@ -1,7 +1,3 @@
-"""
-environment.py
-Responsibility: Environment creation, wrappers, and preprocessing for Assetto Corsa.
-"""
 
 import sys #importing sys for path management
 import os #importing os for path management

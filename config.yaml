@@ -1,7 +1,4 @@
-# config.yaml
-# Minimal configuration for Task 1 Environment API Confirmation
-
-work_dir: "output"
+#This is the configuration file for the Assetto Corsa Gym environment.
 task: AssettoCorsaGym
 seed: 0
 
