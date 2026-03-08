@@ -1,31 +1,62 @@
-import yaml
-import matplotlib.pyplot as plt
-import numpy as np
+"""
+utils.py
+Responsibility: Shared utilities including configuration loading, logging, and SB3 Callbacks.
+"""
+from stable_baselines3.common.callbacks import BaseCallback
 
-# ===================================================================
-# --- Utility Functions ---
-# ===================================================================
-def load_config(filepath):
+class SaveOnBestTrainingRewardCallback(BaseCallback):
     """
-    Loads the YAML configuration file.
+    An SB3 callback that checks the training reward periodically and saves 
+    the model if it achieves a new best performance.
+    """
+    def __init__(self, check_freq, log_dir, verbose=1):
+        """
+        Initializes the callback parameters.
+        
+        Args:
+            check_freq (int): Number of steps between evaluation checks.
+            log_dir (str): Directory to save the best model weights.
+            verbose (int): Logging verbosity level.
+            
+        Returns:
+            None
+        """
+        pass
 
+    def _init_callback(self):
+        """
+        Internal SB3 method to set up variables before training begins.
+        
+        Args:
+            None
+            
+        Returns:
+            None
+        """
+        pass
+
+    def _on_step(self):
+        """
+        Internal SB3 method called at each environment step. Checks if it is 
+        time to evaluate and potentially save the model.
+        
+        Args:
+            None
+            
+        Returns:
+            bool: If False, training is aborted early. Otherwise, True.
+        """
+        pass
+
+def plot_learning_curve(log_dir, title="SAC Learning Curve"):
+    """
+    Parses the SB3 monitor logs and plots the episodic returns over time.
+    
     Args:
-        filepath (str): Path to the config.yaml file.
-
+        log_dir (str): The directory containing the monitor.csv files.
+        title (str): The title of the generated plot.
+        
     Returns:
-        dict: Parsed configuration dictionary.
+        None
     """
-    with open(filepath, 'r') as file:
-        return yaml.safe_load(file)
-
-def plot_results(rewards, losses, save_path, moving_avg_window):
-    """
-    Plots the learning curves (returns and losses) as required by Phase 1 metrics[cite: 100, 104].
-
-    Args:
-        rewards (list): List of episodic returns.
-        losses (list): List of episodic average losses.
-        save_path (str): Filepath to save the plot.
-        moving_avg_window (int): Window for the rolling mean.
-    """
-    pass # Skeleton: Implement matplotlib plotting logic
+    pass

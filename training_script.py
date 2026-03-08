@@ -1,6 +1,32 @@
 import torch
 from environment import create_env
 
+def train_agent():
+    """
+    The main training pipeline. Instantiates the environment, creates the 
+    SAC agent wrapper, sets up the SB3 callbacks, and executes the learning loop.
+    
+    Args:
+        None
+        
+    Returns:
+        None
+    """
+    pass
+
+def evaluate_agent(model_path):
+    """
+    Loads a trained SAC model and runs it in the environment in pure 
+    exploitation mode (deterministic=True) to evaluate lap completion rate.
+    
+    Args:
+        model_path (str): The path to the saved SB3 .zip model.
+        
+    Returns:
+        None
+    """
+    pass
+
 def main():
     # 1. Initialize the environment
     print("Initializing Assetto Corsa environment...")
