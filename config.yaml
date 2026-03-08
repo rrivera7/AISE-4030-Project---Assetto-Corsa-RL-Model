@@ -1,0 +1,36 @@
+# Environment Settings
+environment:
+  # The exact track name Assetto Corsa will check for
+  track_name: "monza" # Change to "ks_barcelona-layout_gp" if testing Barcelona
+  
+  # Path to the specific Assetto Corsa Gym track configuration
+  ac_config_path: "./AssettoCorsaConfigs/tracks/config.yml"
+  
+  # Maximum steps before an episode is forced to terminate
+  max_steps_per_episode: 2000
+
+
+# Agent Hyperparameters (Soft Actor-Critic)
+agent:
+  algorithm: "SAC"
+  
+  # Discount factor for long-horizon driving behavior
+  gamma: 0.99
+  
+  # Learning rates for the neural networks
+  learning_rate_actor: 0.0003
+  learning_rate_critic: 0.0003
+  
+  # Soft update parameter for target networks
+  tau: 0.005
+  
+  # Experience Replay settings
+  batch_size: 256
+  buffer_capacity: 1000000
+
+
+# ---------------------------------------------------------
+# Execution & File Paths
+execution:
+  # Output directory for saved model weights, training history, and plots
+  results_dir: "./sac_results/"
