@@ -1,62 +1,46 @@
-"""
-utils.py
-Responsibility: Shared utilities including configuration loading, logging, and SB3 Callbacks.
-"""
-from stable_baselines3.common.callbacks import BaseCallback
-
-class SaveOnBestTrainingRewardCallback(BaseCallback):
+class ModelCallback(BaseCallback):
     """
-    An SB3 callback that checks the training reward periodically and saves 
-    the model if it achieves a new best performance.
+    Custom callback for monitoring and managing the SAC model during training.
     """
-    def __init__(self, check_freq, log_dir, verbose=1):
+    def __init__(self, verbose=0):
         """
-        Initializes the callback parameters.
-        
-        Args:
-            check_freq (int): Number of steps between evaluation checks.
-            log_dir (str): Directory to save the best model weights.
-            verbose (int): Logging verbosity level.
-            
-        Returns:
-            None
-        """
-        pass
+        Initializes the callback.
 
-    def _init_callback(self):
-        """
-        Internal SB3 method to set up variables before training begins.
-        
         Args:
-            None
-            
+            verbose (int): Verbosity level for logging.
+        """
+        super(ModelCallback, self).__init__(verbose)
+
+    def load_config(self, config_path):
+        """
+        Loads configuration settings for use within the callback.
+
+        Args:
+            config_path (str): Path to the YAML or JSON configuration file.
+
         Returns:
-            None
+            dict: The loaded configuration data.
         """
         pass
 
     def _on_step(self):
         """
-        Internal SB3 method called at each environment step. Checks if it is 
-        time to evaluate and potentially save the model.
-        
-        Args:
-            None
-            
+        Method called by the model at every step during training.
+
         Returns:
-            bool: If False, training is aborted early. Otherwise, True.
+            bool: If return is False, training will be aborted.
         """
-        pass
+        return True
 
 def plot_learning_curve(log_dir, title="SAC Learning Curve"):
     """
-    Parses the SB3 monitor logs and plots the episodic returns over time.
-    
+    Visualizes the training progress by plotting rewards over time.
+
     Args:
-        log_dir (str): The directory containing the monitor.csv files.
-        title (str): The title of the generated plot.
-        
+        log_dir (str): Path to the directory containing training logs.
+        title (str): Title of the resulting plot.
+
     Returns:
-        None
+        None: Displays or saves a matplotlib figure.
     """
     pass
