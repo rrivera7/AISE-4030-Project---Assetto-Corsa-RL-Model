@@ -1,0 +1,51 @@
+{
+    "LastSplits": [
+        0,
+        0,
+        0
+    ],
+    "WindSpeed": 0,
+    "TrackName": "monza",
+    "WindDirection": 0,
+    "CAR_WHEEL_R": [
+        0.3400000035762787,
+        0.3400000035762787,
+        0.35249999165534973,
+        0.35249999165534973
+    ],
+    "autoShifterOn": 0,
+    "TyreContactPoint_FL": [
+        -182.2862548828125,
+        -7.33931827545166,
+        153.89846801757812
+    ],
+    "TrackLength": 5758.66064453125,
+    "penaltiesEnabled": 1,
+    "TyreContactPoint_RL": [
+        -182.5585479736328,
+        -7.355248928070068,
+        156.39361572265625
+    ],
+    "WorldPosition": [
+        -181.6036834716797,
+        -6.947479724884033,
+        155.1544189453125
+    ],
+    "isCarInPit": 0,
+    "TyreContactPoint_RR": [
+        -180.90196228027344,
+        -7.329396724700928,
+        156.55972290039062
+    ],
+    "isCarInPitlane": 0,
+    "TyreContactPoint_FR": [
+        -180.6742706298828,
+        -7.315165042877197,
+        154.05999755859375
+    ],
+    "CAR_TRACK": 1.6650934179068992,
+    "CAR_WHEELBASE": 2.51001182928646,
+    "TrackConfiguration": "",
+    "CarName": "bmw_z4_gt3",
+    "TrackFullName": "monza"
+}

@@ -6,7 +6,7 @@ import sys
 import os
 from omegaconf import OmegaConf
 
-# Route directly to the inner gym folder
+# Route directly to the inner gym folder, identical to how was demonstrated in the demo notebook from the Assetto Corsa Gym repository
 sys.path.append(os.path.abspath('./assetto_corsa_gym'))
 import AssettoCorsaEnv.assettoCorsa as assettoCorsa
 
