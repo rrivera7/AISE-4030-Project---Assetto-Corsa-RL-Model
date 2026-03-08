@@ -1,55 +1,46 @@
-"""
-training_script.py
-Responsibility: Main entry point. For Task 1, this confirms the API and hardware setup.
-"""
 import torch
-import numpy as np
 from environment import create_env
 
-def verify_environment():
-    print("--- TASK 1: ENVIRONMENT SETUP & API CONFIRMATION ---")
-    
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    print(f"\n[Hardware] Device being used: {device}")
-    
-    print("\n[Init] Booting Assetto Corsa Environment...")
-    env = create_env()
-    
-    print("[Init] Resetting environment to start state...")
+def main():
+    # 1. Initialize the environment
+    print("Initializing Assetto Corsa environment...")
+    env = create_env(config_path='./config.yaml')
+
+    # 2. Obtain State and Action Spaces
+    # Observation space (State)
+    obs_space = env.observation_space
+    # Action space
+    act_space = env.action_space
+
+    # 3. Determine the Device (CPU or GPU)
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    # Display Environment Metadata
+    print("--- Environment Ready ---")
+    print(f"State Space:  {obs_space}")
+    print(f"Action Space: {act_space}")
+    print(f"Device:       {device} ({'GPU' if device.type == 'cuda' else 'CPU'})")
+    print("-------------------------")
+
+    # 4. Confirm Environment Step
+    print("\nTesting environment step...")
     initial_state = env.reset()
     
-    print("\n--- OBSERVATION (STATE) SPACE ---")
-    print(f"Shape: {env.observation_space.shape}")
-    print(f"Data Type: {env.observation_space.dtype}")
-    print(f"Value Ranges: Min = {np.min(env.observation_space.low)}, Max = {np.max(env.observation_space.high)}")
+    # Take a dummy action (sampling from the action space)
+    random_action = env.action_space.sample()
     
-    print("\n--- ACTION SPACE ---")
-    is_continuous = 'Box' in str(type(env.action_space))
-    print(f"Type: {'Continuous' if is_continuous else 'Discrete'}")
-    print(f"Dimensions/Shape: {env.action_space.shape}")
-    print(f"Value Ranges: Low = {env.action_space.low}, High = {env.action_space.high}")
+    # Step the environment
+    # Note: Modern Gym versions return 5 values (obs, reward, terminated, truncated, info)
+    step_result = env.step(random_action)
     
-    print("\n--- EXECUTING TEST STEP ---")
-    try:
-        # Using the exact action application method from the demo
-        steer = 0.1
-        action_array = np.array([steer, 0.1, -1.0])
-        print(f"Applying action array: {action_array}")
-        
-        env.set_actions(action_array)
-        next_state, reward, done, info = env.step(action=None)
-        
-        print("[Success] Confirmation that at least one environment step executed successfully!")
-        print(f"Step Output -> Reward: {reward:.4f}, Done: {done}")
-        
-    except Exception as e:
-        print(f"[Error] Environment step failed: {e}")
-        
-    finally:
-        print("\n[Cleanup] Recovering car and closing environment...")
-        if hasattr(env, 'recover_car'):
-            env.recover_car()
-        env.close()
+    if step_result:
+        print("Success: Environment step confirmed.")
+        print(f"Sample Observation Shape: {step_result[0].shape if hasattr(step_result[0], 'shape') else 'N/A'}")
+    else:
+        print("Error: Environment failed to step.")
+
+    # Cleanup
+    # env.close() 
 
 if __name__ == "__main__":
-    verify_environment()
+    main()

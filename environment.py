@@ -2,14 +2,16 @@
 environment.py
 Responsibility: Environment creation, wrappers, and preprocessing for Assetto Corsa.
 """
-import sys
-import os
-from omegaconf import OmegaConf
 
-# Route directly to the inner gym folder, identical to how was demonstrated in the demo notebook from the Assetto Corsa Gym repository
+import sys #importing sys for path management
+import os #importing os for path management
+from omegaconf import OmegaConf #importing OmegaConf for configuration management(as per the demo notebook)
+
+# Route directly to the inner gym folder, identical to how was demonstrated in the demo
 sys.path.append(os.path.abspath('./assetto_corsa_gym'))
 import AssettoCorsaEnv.assettoCorsa as assettoCorsa
 
+#create_env function to initialize and return the Assetto Corsa Gym environment using OmegaConf
 def create_env(config_path='./config.yaml'):
     """
     Initializes and returns the Assetto Corsa Gym environment using OmegaConf.
