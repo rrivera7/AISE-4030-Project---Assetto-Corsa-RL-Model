@@ -40,3 +40,31 @@ AssettoCorsa:
   final_image_height: 240
   color_mode: "gray"
   use_obs_extra: False
+
+  # Training Run Parameters
+train:
+  total_timesteps: 1000000
+  device: "cuda"  # or "cpu"
+  save_path: "./models/sac_assetto_corsa"
+  log_interval: 10  # How often to print progress
+
+  # SAC Agent Hyperparameters (Stable-Baselines3)
+sac:
+  learning_rate: 0.0003
+  buffer_size: 1000000
+  batch_size: 256
+  tau: 0.005
+  gamma: 0.99
+  train_freq: 1
+  gradient_steps: 1
+  learning_starts: 10000
+
+# Evaluation Parameters
+eval:
+  n_eval_episodes: 5
+  eval_freq: 50000 # Evaluate every X steps
+
+# Policy Architecture (easier to update, will be used in the agent init method)
+  policy_kwargs:
+    net_arch: [256, 256]
+    use_sde: False # State Dependent Exploration
