@@ -35,9 +35,7 @@ python training_script.py
 ### If your Conda env has a different name or Python executable path, update the plugin config accordingly (the gym plugin can also use an explicit `config_python_executable` path instead of the default Anaconda env lookup).
 
 # Core Components and Architecture
-## The codebase is organized into several specialized modules to handle environment interfacing, agent logic, and data processing:
-
-## File Explanations (Current Implementation)
+## Current Implementation
 ### training_script.py: Main runnable script right now. It initializes the Assetto Corsa environment, reports observation/action spaces, selects CPU/GPU with PyTorch, and performs a basic reset/step validation. It also contains placeholder `train_agent()` and `evaluate_agent()` functions.
 
 ### sac_agent.py: Defines the `SACAgent` wrapper interface (constructor, action selection, train, save, load), but method bodies are currently placeholders (`pass`).
