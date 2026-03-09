@@ -2,6 +2,38 @@
 
 ## This project involves the development and implementation of an autonomous driving agent for the Assetto Corsa simulation environment. The system utilizes the Soft Actor-Critic (SAC) algorithm, a state-of-the-art reinforcement learning framework, to train a model capable of navigating complex vehicle physics. The primary objective is to optimize lap times and vehicle stability using a BMW Z4 GT3 on the Monza circuit.
 
+# Installation and Setup
+## Prerequisites
+### Anaconda/Miniconda is required.
+### Use a Conda environment with Python 3.9 (the gym plugin defaults to an env name `p309`, which maps to Python 3.9 in this project setup).
+
+## Environment Setup
+```bash
+conda create -n p309 python=3.9 -y
+conda activate p309
+```
+
+## Install the Gym Package
+### From the repository root:
+```bash
+cd assetto_corsa_gym
+pip install .
+cd ..
+```
+
+## Install Core Training Dependencies
+```bash
+pip install torch stable-baselines3 omegaconf
+```
+
+## Run a Basic Environment Validation
+```bash
+python training_script.py
+```
+
+## Notes
+### If your Conda env has a different name or Python executable path, update the plugin config accordingly (the gym plugin can also use an explicit `config_python_executable` path instead of the default Anaconda env lookup).
+
 # Core Components and Architecture
 ## The codebase is organized into several specialized modules to handle environment interfacing, agent logic, and data processing:
 

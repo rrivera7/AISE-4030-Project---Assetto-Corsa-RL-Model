@@ -6,7 +6,7 @@ class CustomTelemetryExtractor(BaseFeaturesExtractor):
     A custom feature extractor network that processes Assetto Corsa data
     before feeding it into SB3's internal Actor and Critic networks.
     """
-    def __init__(self, observation_space, features_dim=256):
+    def __init__(self, observation_space, features_dim):
         """
         Initializes the custom feature extraction layers.
         
