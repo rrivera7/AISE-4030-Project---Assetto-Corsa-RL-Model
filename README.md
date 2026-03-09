@@ -5,17 +5,29 @@
 # Core Components and Architecture
 ## The codebase is organized into several specialized modules to handle environment interfacing, agent logic, and data processing:
 
-## training_script.py: Serves as the main entry point for the training pipeline, handling environment instantiation, device allocation for CUDA or CPU, and testing basic environment steps.
+## File Explanations (Current Implementation)
+## training_script.py: Main runnable script right now. It initializes the Assetto Corsa environment, reports observation/action spaces, selects CPU/GPU with PyTorch, and performs a basic reset/step validation. It also contains placeholder `train_agent()` and `evaluate_agent()` functions.
 
-## sac_agent.py: Defines the SACAgent class, which wraps the Stable-Baselines3 implementation to manage policy architecture, learning rates, and model serialization.
+## sac_agent.py: Defines the `SACAgent` wrapper interface (constructor, action selection, train, save, load), but method bodies are currently placeholders (`pass`).
 
-## environment.py: Facilitates the connection to the simulation using the assetto_corsa_gym library and initializes settings via OmegaConf.
+## environment.py: Creates the environment by loading `config.yaml` with OmegaConf and calling `assettoCorsa.make_ac_env(...)` from `assetto_corsa_gym`.
 
-## config.yaml: Acts as a centralized configuration hub for hyperparameters such as batch size, learning rate, and simulation-specific variables like sampling frequency and track selection.
+## config.yaml: Central configuration for Assetto Corsa environment parameters, SAC hyperparameters, training settings, and evaluation settings.
 
+## actor_critic.py: Defines `CustomTelemetryExtractor` (SB3 feature extractor class skeleton) for custom observation feature processing before policy/value networks.
 
-## actor_critic.py: Contains a CustomTelemetryExtractor designed to process state vectors and extract relevant features before they are passed to the actor and critic networks.
+## replay_buffer.py: Defines `ReplayBufferConfigurator` as a placeholder utility for replay-buffer-related configuration ideas.
 
-## utils.py: Provides monitoring tools, including a custom callback for training management and functions for visualizing the learning curve.
+## utils.py: Shared training utility scaffolding. Currently includes `ModelCallback` (SB3 callback skeleton with `_on_step` and `load_config`) and `plot_learning_curve(...)` placeholder.
 
-## replay_buffer.py: Includes a utility class intended for the configuration or customization of the internal replay buffer used during the learning process.
+## Code Structure and Naming Conventions
+## The project follows modular, single-responsibility file naming so each file has a clear role:
+
+## `config.yaml` (fixed name): Hyperparameters, environment settings, execution modes, and file paths.
+## `environment.py` (fixed name): Environment creation, wrappers/preprocessing, and simulator hookup.
+## `{algorithm}_agent.py` (named after algorithm): RL agent logic (action selection, learning loop, save/load).
+## `{type}_network.py` (named after network type): Neural network architecture components.
+## `{type}_buffer.py` (named after buffer type): Replay/rollout memory components when applicable.
+## `training_script.py` (fixed name): Main entry point and orchestration for train/eval runs.
+## `utils.py` (fixed name): Shared utilities such as callbacks, plotting, logging helpers, config helpers, and related support functions.
+## `README.md` (fixed name): Project overview, setup/run guide, and design documentation.
