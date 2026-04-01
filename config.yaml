@@ -1,6 +1,7 @@
 #This is the configuration file for the Assetto Corsa Gym environment.
 task: AssettoCorsaGym
 seed: 0
+work_dir: "./"
 
 #Environmnet Parameters: Taken from ASsetto Corsa Gym, all parameters are required to use the environment.
 AssettoCorsa:
@@ -35,9 +36,10 @@ AssettoCorsa:
   use_target_speed: False
   screen_capture_enable: False
 
+
   #This should be a multiple of the resolution set in Assetto Corsa (Mine is currently at 640x480)
-  final_image_width: 320
-  final_image_height: 240
+  final_image_width: 640
+  final_image_height: 480
   color_mode: "gray"
   use_obs_extra: False
 
