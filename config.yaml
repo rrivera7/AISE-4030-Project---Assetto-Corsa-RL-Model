@@ -83,7 +83,7 @@ AssettoCorsa:
 train:
   total_timesteps: 1000000
   device: "cuda"
-  save_path: "./models/sac_assetto_corsa_VF2"
+  save_path: "./models/sac_assetto_corsa_VF3"
   log_interval: 10
 
 # ==========================================
@@ -123,7 +123,8 @@ ppo:
 policy:
   net_arch: [256, 256]
   use_sde: False
-  features_dim: 128
+  use_custom_extractor: False  # True = CustomTelemetryExtractor bottleneck (VF1/VF2), False = raw obs straight to MLP
+  features_dim: 128            # only used when use_custom_extractor is True
 
 # ==========================================
 # Evaluation & Logging

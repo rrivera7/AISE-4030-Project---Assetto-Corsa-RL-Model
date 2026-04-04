@@ -26,15 +26,16 @@ class SACAgent:
         self.env = env
         self.config = config
 
-        # Build the policy keyword arguments from the config
         policy_kwargs = dict(
             net_arch=list(config.policy.net_arch),
             use_sde=config.policy.use_sde,
-            features_extractor_class=CustomTelemetryExtractor,
-            features_extractor_kwargs=dict(
-                features_dim=config.policy.features_dim
-            ),
         )
+
+        if config.policy.get("use_custom_extractor", False):
+            policy_kwargs["features_extractor_class"] = CustomTelemetryExtractor
+            policy_kwargs["features_extractor_kwargs"] = dict(
+                features_dim=config.policy.features_dim
+            )
 
         # Instantiate the SB3 SAC model with every tuneable parameter
         self.model = SAC(

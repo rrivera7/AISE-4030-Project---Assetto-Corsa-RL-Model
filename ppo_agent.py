@@ -28,11 +28,13 @@ class PPOAgent:
 
         policy_kwargs = dict(
             net_arch=list(config.policy.net_arch),
-            features_extractor_class=CustomTelemetryExtractor,
-            features_extractor_kwargs=dict(
-                features_dim=config.policy.features_dim
-            ),
         )
+
+        if config.policy.get("use_custom_extractor", False):
+            policy_kwargs["features_extractor_class"] = CustomTelemetryExtractor
+            policy_kwargs["features_extractor_kwargs"] = dict(
+                features_dim=config.policy.features_dim
+            )
 
         self.model = PPO(
             "MlpPolicy",
