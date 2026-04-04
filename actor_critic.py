@@ -1,33 +1,40 @@
+import gym
+import torch
 import torch.nn as nn
 from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
 
+
 class CustomTelemetryExtractor(BaseFeaturesExtractor):
     """
-    A custom feature extractor network that processes Assetto Corsa data
-    before feeding it into SB3's internal Actor and Critic networks.
-    """
-    def __init__(self, observation_space, features_dim):
-        """
-        Initializes the custom feature extraction layers.
-        
-        Args:
-            observation_space (gym.Space): The environment's observation space.
-            features_dim (int): The number of output features to pass to the policy.
-            
-        Returns:
-            None
-        """
-        pass
+    Custom feature extractor for Assetto Corsa telemetry data.
+    Takes the raw flat observation vector and projects it through a small
+    two-layer MLP to produce a learned feature representation before
+    it reaches the SAC actor and critic heads.
 
-    def forward(self, observations):
+    Args:
+        observation_space (gym.spaces.Box): The environment observation space.
+        features_dim (int): Dimensionality of the output feature vector.
+                            Controlled by config.policy.features_dim.
+    """
+    def __init__(self, observation_space: gym.spaces.Box, features_dim: int = 128):
+        super(CustomTelemetryExtractor, self).__init__(observation_space, features_dim)
+
+        input_dim = observation_space.shape[0]
+        self.extractor = nn.Sequential(
+            nn.Linear(input_dim, 256),
+            nn.ReLU(),
+            nn.Linear(256, features_dim),
+            nn.ReLU(),
+        )
+
+    def forward(self, observations: torch.Tensor) -> torch.Tensor:
         """
-        Performs a forward pass through the feature extractor. May not be required for the implementation of the SAC agent bec of SB3 library but keeping here 
-        just in case... it is somethuing that falls under {type}_netwrok.py file in the phase 2 doc (part of the NN architecture)
-        
+        Forward pass through the feature extractor.
+
         Args:
-            observations: The state vector from the environment.
-            
+            observations (torch.Tensor): Batch of flat observation vectors.
+
         Returns:
-            feature_shape_array: The extracted features of shape (batch_size, features_dim).
+            torch.Tensor: Learned feature representation of shape (batch, features_dim).
         """
-        pass
+        return self.extractor(observations)

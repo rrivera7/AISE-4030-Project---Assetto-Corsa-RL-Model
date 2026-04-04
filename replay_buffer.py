@@ -1,17 +1,32 @@
 class ReplayBufferConfigurator:
     """
-    A utility class to configure or customize SB3's internal ReplayBuffer.
+    Documents and structures the replay buffer configuration used by SB3's SAC.
+
+    Stable-Baselines3 instantiates and manages its own ReplayBuffer internally.
+    This class exists to:
+      1. Centralise buffer-related parameters in one place.
+      2. Provide a clear extension point for advanced variants
+         (e.g., Prioritized Experience Replay) without changing sac_agent.py.
+
+    Args:
+        buffer_size (int): Maximum number of transitions stored.
+        optimize_memory_usage (bool): If True, SB3 stores next_obs in a
+            memory-efficient way (saves ~50% RAM but limits buffer_size to
+            at most ``sys.maxsize``).
     """
-    def __init__(self, buffer_size):
+
+    def __init__(self, buffer_size: int, optimize_memory_usage: bool = False):
+        self.buffer_size = buffer_size
+        self.optimize_memory_usage = optimize_memory_usage
+
+    def get_buffer_kwargs(self):
         """
-        Initializes the buffer configuration. Note: SB3 instantiates the actual 
-        buffer automatically inside the SAC model (from what I can tell), but this class can be used 
-        to manipulate the `optimize_memory_usage` flags or custom buffer classes maybe?.
-        
-        Args:
-            buffer_size (int): The maximum number of transitions to store.
-            
+        Returns keyword arguments that can be forwarded directly to the
+        SB3 model constructor's ``replay_buffer_kwargs`` parameter.
+
         Returns:
-            None
+            dict: Buffer configuration dictionary.
         """
-        pass
+        return {
+            "optimize_memory_usage": self.optimize_memory_usage,
+        }

@@ -1,12 +1,12 @@
 import os
 import json
-from stable_baselines3 import SAC
+from stable_baselines3 import PPO
 from actor_critic import CustomTelemetryExtractor
 
 
-class SACAgent:
+class PPOAgent:
     """
-    Wrapper around the Stable-Baselines3 SAC implementation.
+    Wrapper around the Stable-Baselines3 PPO implementation.
     Reads all hyperparameters from the project config.yaml so that
     experiments are fully reproducible from a single configuration file.
 
@@ -17,40 +17,36 @@ class SACAgent:
 
     def __init__(self, env, config):
         """
-        Initializes the SAC model with hyperparameters from config.yaml.
+        Initializes the PPO model with hyperparameters from config.yaml.
 
         Args:
             env (gym.Env): A Gym-compatible environment instance.
-            config (OmegaConf): Loaded config with sac, policy, train sections.
+            config (OmegaConf): Loaded config with ppo, policy, train sections.
         """
         self.env = env
         self.config = config
 
-        # Build the policy keyword arguments from the config
         policy_kwargs = dict(
             net_arch=list(config.policy.net_arch),
-            use_sde=config.policy.use_sde,
             features_extractor_class=CustomTelemetryExtractor,
             features_extractor_kwargs=dict(
                 features_dim=config.policy.features_dim
             ),
         )
 
-        # Instantiate the SB3 SAC model with every tuneable parameter
-        self.model = SAC(
+        self.model = PPO(
             "MlpPolicy",
             env,
-            learning_rate=config.sac.learning_rate,
-            buffer_size=config.sac.buffer_size,
-            batch_size=config.sac.batch_size,
-            tau=config.sac.tau,
-            gamma=config.sac.gamma,
-            ent_coef=config.sac.ent_coef,
-            target_entropy=config.sac.target_entropy,
-            target_update_interval=config.sac.target_update_interval,
-            train_freq=config.sac.train_freq,
-            gradient_steps=config.sac.gradient_steps,
-            learning_starts=config.sac.learning_starts,
+            learning_rate=config.ppo.learning_rate,
+            n_steps=config.ppo.n_steps,
+            batch_size=config.ppo.batch_size,
+            n_epochs=config.ppo.n_epochs,
+            gamma=config.ppo.gamma,
+            gae_lambda=config.ppo.gae_lambda,
+            clip_range=config.ppo.clip_range,
+            ent_coef=config.ppo.ent_coef,
+            vf_coef=config.ppo.vf_coef,
+            max_grad_norm=config.ppo.max_grad_norm,
             policy_kwargs=policy_kwargs,
             verbose=1,
             device=config.train.device,
@@ -88,7 +84,7 @@ class SACAgent:
 
     def save_model(self, filepath):
         """
-        Persists the full SAC model (weights + optimizer state) to disk.
+        Persists the full PPO model (weights + optimizer state) to disk.
 
         Args:
             filepath (str): Destination path (without extension; SB3 adds .zip).
@@ -99,44 +95,41 @@ class SACAgent:
 
     def load_model(self, filepath):
         """
-        Loads a previously saved SAC model from disk, rebinding it to
+        Loads a previously saved PPO model from disk, rebinding it to
         the current environment and device.
 
         Args:
             filepath (str): Path to the saved model file.
         """
-        self.model = SAC.load(filepath, env=self.env, device=self.config.train.device)
+        self.model = PPO.load(filepath, env=self.env, device=self.config.train.device)
         print(f"Model loaded from {filepath}")
 
     def save_checkpoint(self, path):
         """
-        Saves a full training checkpoint: model weights, replay buffer,
-        and training metadata so training can be resumed exactly.
+        Saves a training checkpoint: model weights and training metadata.
+        PPO is on-policy so there is no replay buffer to persist.
 
         Args:
             path (str): Directory to save the checkpoint into.
         """
         os.makedirs(path, exist_ok=True)
         model_path = os.path.join(path, "model")
-        buffer_path = os.path.join(path, "replay_buffer")
         meta_path = os.path.join(path, "training_meta.json")
 
         self.model.save(model_path)
-        self.model.save_replay_buffer(buffer_path)
 
         meta = {
             "num_timesteps": self.model.num_timesteps,
-            "num_episodes": self.model._episode_num,
+            "num_episodes": getattr(self.model, '_episode_num', 0),
         }
         with open(meta_path, 'w') as f:
             json.dump(meta, f)
 
-        print(f"Full checkpoint saved to {path}")
+        print(f"Checkpoint saved to {path}")
 
     def load_checkpoint(self, path):
         """
-        Loads a full training checkpoint: model weights, replay buffer,
-        and training metadata.
+        Loads a training checkpoint: model weights and training metadata.
 
         Args:
             path (str): Directory containing the checkpoint files.
@@ -145,17 +138,10 @@ class SACAgent:
             dict: Training metadata (num_timesteps, num_episodes).
         """
         model_path = os.path.join(path, "model")
-        buffer_path = os.path.join(path, "replay_buffer.pkl")
         meta_path = os.path.join(path, "training_meta.json")
 
-        self.model = SAC.load(model_path, env=self.env, device=self.config.train.device)
+        self.model = PPO.load(model_path, env=self.env, device=self.config.train.device)
         print(f"Model loaded from {model_path}")
-
-        if os.path.exists(buffer_path):
-            self.model.load_replay_buffer(buffer_path)
-            print(f"Replay buffer loaded from {buffer_path}")
-        else:
-            print("No replay buffer found, starting with empty buffer.")
 
         meta = {}
         if os.path.exists(meta_path):

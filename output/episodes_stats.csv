@@ -1,2 +1,0 @@
-ep_count,ep_steps,total_steps,packages_lost,ep_reward,speed_mean,speed_max,BestLap,terminated,LapNo_0,ep_bestLapTime
-1,2,4,0,0.0015983281152485971,0.0666617751121521,0.06741838902235031,0.0,False,0.0,0

@@ -1,3 +1,41 @@
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual environments
+.env/
+.venv/
+env/
+venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Model checkpoints & replay buffers
+models/
+*.pkl
+
+# Training output / telemetry logs
+SAC_Results*/
+PPO_Results*/
+laps*/
+output/
+episodes_stats*.csv
+
+# Parquet data files
+*.parquet
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS
+Thumbs.db
+.DS_Store

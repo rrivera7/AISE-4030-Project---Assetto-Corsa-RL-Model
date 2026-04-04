@@ -250,6 +250,19 @@ class AssettoCorsaEnv(Env, gym_utils.EzPickle):
         self.penalize_actions_diff = config.penalize_actions_diff
         self.penalize_actions_diff_coef = config.penalize_actions_diff_coef
 
+        # Reward shaping parameters from config
+        self.speed_normalization = getattr(config, 'speed_normalization', 300.0)
+        self.gap_normalization = getattr(config, 'gap_normalization', 12.0)
+        self.low_speed_threshold = getattr(config, 'low_speed_threshold', 5.0)
+        self.low_speed_penalty = getattr(config, 'low_speed_penalty', 0.5)
+        self.curvature_speed_penalty_enabled = getattr(config, 'curvature_speed_penalty_enabled', False)
+        self.curvature_speed_penalty_coef = getattr(config, 'curvature_speed_penalty_coef', 0.02)
+        self.curvature_speed_penalty_threshold = getattr(config, 'curvature_speed_penalty_threshold', 0.003)
+        self.curvature_lookahead_distance = getattr(config, 'curvature_lookahead_distance', 50)
+        self.lap_completion_bonus = getattr(config, 'lap_completion_bonus', 10.0)
+        self.oot_penalty_coef = getattr(config, 'oot_penalty_coef', 0.5)
+        self.oot_penalty_threshold = getattr(config, 'oot_penalty_threshold', 3.0)
+
         self.max_laps_number = self.config.max_laps_number
 
         self.tracks_path = os.path.join(self.ac_configs_path, "tracks")
@@ -272,6 +285,7 @@ class AssettoCorsaEnv(Env, gym_utils.EzPickle):
         self.ep_steps = 0
         self.ep_reward = 0.
         self.stats_saved = False
+        self._last_lap_count = 1  # track lap transitions for completion bonus
 
         self.client = Client(self.config)
         self.static_info = {}
@@ -610,12 +624,36 @@ class AssettoCorsaEnv(Env, gym_utils.EzPickle):
 
         r = speed
         if self.use_reference_line_in_reward:
-            r *= ( 1.0 - (np.abs( state["gap"]) / 12.00))
-        r /= 300. # normalize
+            r *= ( 1.0 - (np.abs( state["gap"]) / self.gap_normalization))
+        r /= self.speed_normalization
 
         if self.penalize_actions_diff:
             action_difference_penalty = np.linalg.norm(actions_diff, ord=2)
             r -= action_difference_penalty * self.penalize_actions_diff_coef
+
+        # Penalize low speed to prevent the agent from learning to stop
+        speed_ms = np.array(state['speed'])
+        if speed_ms < self.low_speed_threshold:
+            r -= self.low_speed_penalty
+
+        # Graduated out-of-track penalty: increases as car approaches track edge
+        if self.enable_out_of_track_penalty and dist_to_border < self.oot_penalty_threshold:
+            r -= self.oot_penalty_coef * (self.oot_penalty_threshold - dist_to_border)
+
+        # Curvature-scaled speed penalty: penalize high speed in corners
+        if self.curvature_speed_penalty_enabled:
+            curv = np.abs(self.ref_lap.get_curvature_segment(
+                state['LapDist'], self.curvature_lookahead_distance, 1)).item()
+            if curv > self.curvature_speed_penalty_threshold:
+                r -= self.curvature_speed_penalty_coef * curv * speed_ms
+
+        # Lap completion bonus
+        current_lap = state.get('LapCount', self._last_lap_count)
+        if current_lap > self._last_lap_count:
+            r += self.lap_completion_bonus
+            logger.info(f"Lap completed! Bonus +{self.lap_completion_bonus}. Lap {int(self._last_lap_count)} -> {int(current_lap)}")
+            self._last_lap_count = current_lap
+
         r = r.reshape(-1)  # [N, 1] -> [N]
         return r
 
@@ -680,6 +718,7 @@ class AssettoCorsaEnv(Env, gym_utils.EzPickle):
 
         self.ep_reward = 0.
         self.ep_steps = 0  # reset steps after flushing the actions
+        self._last_lap_count = 1  # reset lap tracker for new episode
         return obs
 
     def get_info(self):
@@ -724,6 +763,12 @@ class AssettoCorsaEnv(Env, gym_utils.EzPickle):
                                                     CURV_LOOK_AHEAD_VECTOR_SIZE)    # size of the vector downsampled
         obs = np.hstack([obs, LAC / CURV_NORMALIZATION_CONSTANT])
 
+        if self.use_target_speed:
+            target_speed_ahead = self.ref_lap.get_target_speed_segment(
+                state['LapDist'],
+                TARG_SPEED_LOOK_AHEAD_DISTANCE,
+                TARG_SPEED_LOOK_AHEAD_VECTOR_SIZE)
+            obs = np.hstack([obs, target_speed_ahead / TOP_SPEED_MS])
 
         if history is None:
             history = self.states

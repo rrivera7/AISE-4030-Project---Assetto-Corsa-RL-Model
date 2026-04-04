@@ -4,12 +4,6 @@
 task: AssettoCorsaGym
 seed: 42
 work_dir: "./"
-algorithm: "sac"  # "sac" or "ppo"
-
-# Set to "train" to train, or "evaluate" to load & evaluate a saved model
-mode: "train"
-# Path to a saved model for evaluation (used when mode is "evaluate")
-evaluate_model_path: "./models/sac_assetto_corsa_VF2/checkpoint_latest/model.zip"
 
 # ==========================================
 # Environment Parameters (Assetto Corsa Gym)
@@ -18,7 +12,7 @@ evaluate_model_path: "./models/sac_assetto_corsa_VF2/checkpoint_latest/model.zip
 AssettoCorsa:
   # --- Core Simulation Settings ---
   track: "monza"
-  car: "bmw_z4_gt3" #"bmw_z4_gt3"
+  car: "bmw_z4_gt3"
   ego_sampling_freq: 25
   max_episode_py_time: 600.
   max_laps_number: null
@@ -51,26 +45,13 @@ AssettoCorsa:
   use_reference_line_in_reward: True
   use_target_speed: True
   penalize_actions_diff: True
-  penalize_actions_diff_coef: 0.5
+  penalize_actions_diff_coef: 0.3
   enable_out_of_track_termination: True
   use_ac_out_of_track: True
-  enable_out_of_track_penalty: True
+  enable_out_of_track_penalty: False
   enable_low_speed_termination: True
   recover_car_on_done: True
   send_reset_at_start: True
-
-  # --- Reward Shaping Parameters ---
-  speed_normalization: 300.0
-  gap_normalization: 12.0
-  low_speed_threshold: 5.0
-  low_speed_penalty: 0.5
-  curvature_speed_penalty_enabled: False
-  curvature_speed_penalty_coef: 0.02 #False rn
-  curvature_speed_penalty_threshold: 0.003 #False rn
-  curvature_lookahead_distance: 50 
-  lap_completion_bonus: 100.0 # Bonus for completing a lap, encourages finishing laps and not just going in circles (was 10.0)
-  oot_penalty_coef: 0.5
-  oot_penalty_threshold: 3.0
 
   # --- Internal (used by ACG) ---
   gap_const: 12.
@@ -83,7 +64,7 @@ AssettoCorsa:
 train:
   total_timesteps: 1000000
   device: "cuda"
-  save_path: "./models/sac_assetto_corsa_VF2"
+  save_path: "./models/sac_assetto_corsa"
   log_interval: 10
 
 # ==========================================
@@ -91,31 +72,16 @@ train:
 # ==========================================
 sac:
   learning_rate: 0.0003
-  buffer_size: 500000  #1000000 was what it was before trying to v2 fresh
-  batch_size: 256 #represents the number of samples used for each training step
-  gamma: 0.99 #represents the discount factor for future rewards
-  tau: 0.005 #represents the soft update factor for the target network
-  ent_coef: "auto" #"auto" was what it was before trying to save v2
+  buffer_size: 1000000
+  batch_size: 256
+  gamma: 0.99
+  tau: 0.005
+  ent_coef: "auto"
   target_entropy: "auto"
   target_update_interval: 1
   train_freq: 1
   gradient_steps: 1
   learning_starts: 2000
-
-# ==========================================
-# PPO Hyperparameters (passed to SB3 PPO)
-# ==========================================
-ppo:
-  learning_rate: 0.0003
-  n_steps: 2048
-  batch_size: 64
-  n_epochs: 10
-  gamma: 0.99
-  gae_lambda: 0.95
-  clip_range: 0.2
-  ent_coef: 0.01
-  vf_coef: 0.5
-  max_grad_norm: 0.5
 
 # ==========================================
 # Policy Architecture
@@ -129,6 +95,6 @@ policy:
 # Evaluation & Logging
 # ==========================================
 eval:
-  n_eval_episodes: 50
+  n_eval_episodes: 10
   eval_freq: 50000
   log_loss_freq: 100
