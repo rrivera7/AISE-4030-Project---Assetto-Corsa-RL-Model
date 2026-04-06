@@ -9,7 +9,7 @@ algorithm: "sac"  # "sac" or "ppo"
 # Set to "train" to train, or "evaluate" to load & evaluate a saved model
 mode: "train"
 # Path to a saved model for evaluation (used when mode is "evaluate")
-evaluate_model_path: "./models/sac_assetto_corsa_VF2/checkpoint_latest/model.zip"
+evaluate_model_path: "./models/sac_assetto_corsa_VF4/checkpoint_ep600/model.zip"
 
 # ==========================================
 # Environment Parameters (Assetto Corsa Gym)
@@ -49,12 +49,12 @@ AssettoCorsa:
 
   # --- Reward & Termination ---
   use_reference_line_in_reward: True
-  use_target_speed: True
+  use_target_speed: False
   penalize_actions_diff: True
-  penalize_actions_diff_coef: 0.5
+  penalize_actions_diff_coef: 0.7 #was 0.3 for recent model sac , want to try 0.7 to escape local minima
   enable_out_of_track_termination: True
   use_ac_out_of_track: True
-  enable_out_of_track_penalty: True
+  enable_out_of_track_penalty: False  #false for vf1
   enable_low_speed_termination: True
   recover_car_on_done: True
   send_reset_at_start: True
@@ -68,7 +68,7 @@ AssettoCorsa:
   curvature_speed_penalty_coef: 0.02 #False rn
   curvature_speed_penalty_threshold: 0.003 #False rn
   curvature_lookahead_distance: 50 
-  lap_completion_bonus: 100.0 # Bonus for completing a lap, encourages finishing laps and not just going in circles (was 10.0)
+  lap_completion_bonus: 10.0 # Bonus for completing a lap, encourages finishing laps and not just going in circles (was 10.0 for vf1, 50 for vf4)
   oot_penalty_coef: 0.5
   oot_penalty_threshold: 3.0
 
@@ -83,15 +83,18 @@ AssettoCorsa:
 train:
   total_timesteps: 1000000
   device: "cuda"
-  save_path: "./models/sac_assetto_corsa_VF3"
+  save_path: "./models/sac_assetto_corsa_VF4"  # no custom extractor, raw obs → MLP for the 4th attempt
   log_interval: 10
+  
+  # Subfolder under save_path to resume from (must contain model.zip + replay_buffer.pkl). Empty = only checkpoint_latest if present.
+  resume_checkpoint: "checkpoint_ep600" #for ex. checkpoint_ep400
 
 # ==========================================
 # SAC Hyperparameters (passed to SB3 SAC)
 # ==========================================
-sac:
+sac: #episode 667 after I changed 
   learning_rate: 0.0003
-  buffer_size: 500000  #1000000 was what it was before trying to v2 fresh
+  buffer_size: 1000000  #1000000 was what it was before trying to v2 fresh (at 500k).... used 100k by accided in 
   batch_size: 256 #represents the number of samples used for each training step
   gamma: 0.99 #represents the discount factor for future rewards
   tau: 0.005 #represents the soft update factor for the target network
@@ -124,12 +127,12 @@ policy:
   net_arch: [256, 256]
   use_sde: False
   use_custom_extractor: False  # True = CustomTelemetryExtractor bottleneck (VF1/VF2), False = raw obs straight to MLP
-  features_dim: 128            # only used when use_custom_extractor is True
+  features_dim: 128            # only used when use_custom_extractor is True (128 was what it was for vf1 and vf2.... shouldve been higher)
 
 # ==========================================
 # Evaluation & Logging
 # ==========================================
 eval:
-  n_eval_episodes: 50
+  n_eval_episodes: 20
   eval_freq: 50000
   log_loss_freq: 100

@@ -45,13 +45,36 @@ TERMINAL_JUDGE_TIMEOUT = 10.       # If after this number of seconds still no pr
 TOP_SPEED_MS = 80.
 
 def get_date_timestemp():
+    """
+    Returns the current date and time as a formatted string.
+
+    Returns:
+        str: Current timestamp in the format 'YYYYMMDD_HHMMSS.mmm'.
+    """
     return datetime.now().strftime('%Y%m%d_%H%M%S.%f')[:-3]
 
 def load_yaml(file_path):
+    """
+    Loads a YAML file and returns its contents.
+
+    Args:
+        file_path (str): Path to the YAML file.
+
+    Returns:
+        dict: Parsed YAML content.
+    """
     with open(file_path, 'r') as file:
         return yaml.safe_load(file)
 
 def to_pickle(obj, file, verbose=False):
+    """
+    Saves an object to a pickle file.
+
+    Args:
+        obj (Any): Object to save.
+        file (str): File path to save to.
+        verbose (bool, optional): Whether to print saving status.
+    """
     if verbose: print('saving to..', file)
     with open(file, 'wb') as f: pickle.dump(obj, f)
 
@@ -73,7 +96,17 @@ def convert_to_seconds(time_str):
     return minutes * 60 + seconds + milliseconds / 1000
 
 class TaskIdsIndexer:
+    """
+    Manages task IDs for combinations of tracks and cars.
+    """
     def __init__(self, tracks, cars):
+        """
+        Initializes the TaskIdsIndexer with a list of tracks and cars.
+
+        Args:
+            tracks (list): List of track names.
+            cars (list): List of car names.
+        """
         self.tracks = tracks
         self.cars = cars
         self.combination_indices = {}
@@ -285,7 +318,8 @@ class AssettoCorsaEnv(Env, gym_utils.EzPickle):
         self.ep_steps = 0
         self.ep_reward = 0.
         self.stats_saved = False
-        self._last_lap_count = 1  # track lap transitions for completion bonus
+        # Lap bonus uses LapDist wrap (spline reset), not LapCount — AC can bump LapCount without crossing the line.
+        self._prev_lap_dist = None
 
         self.client = Client(self.config)
         self.static_info = {}
@@ -410,9 +444,22 @@ class AssettoCorsaEnv(Env, gym_utils.EzPickle):
         self.is_metaworld = False
 
     def set_reset_state(self, send_reset_at_start):
+        """
+        Sets whether a reset command should be sent at start.
+
+        Args:
+            send_reset_at_start (bool): Flag indicating if reset should be sent.
+        """
         self.send_reset_at_start = send_reset_at_start
 
     def update_racing_line(self, x, y):
+        """
+        Updates the racing line by cropping it around the current position (x, y).
+
+        Args:
+            x (float): Current X coordinate.
+            y (float): Current Y coordinate.
+        """
         # use a cropped version of the racing line => update the gpu as well
         self.racing_line = self.ref_lap.get_racing_line_time()
         self.racing_line[np.sqrt( (self.racing_line[:,0] - x)**2 + (self.racing_line[:,1] - y)**2 ) < RACING_LINE_DIAMETER_CROP]
@@ -647,12 +694,19 @@ class AssettoCorsaEnv(Env, gym_utils.EzPickle):
             if curv > self.curvature_speed_penalty_threshold:
                 r -= self.curvature_speed_penalty_coef * curv * speed_ms
 
-        # Lap completion bonus
-        current_lap = state.get('LapCount', self._last_lap_count)
-        if current_lap > self._last_lap_count:
-            r += self.lap_completion_bonus
-            logger.info(f"Lap completed! Bonus +{self.lap_completion_bonus}. Lap {int(self._last_lap_count)} -> {int(current_lap)}")
-            self._last_lap_count = current_lap
+        # Lap completion bonus: only when distance along spline jumps backward (crossed start/finish forward).
+        # LapCount alone is unreliable in AC (can increment without a real lap).
+        cur_ld = float(state["LapDist"])
+        if self._prev_lap_dist is not None and self.track_length > 0:
+            wrap_threshold = 0.5 * self.track_length
+            if (self._prev_lap_dist - cur_ld) > wrap_threshold:
+                r += self.lap_completion_bonus
+                lc = int(state.get("LapCount", -1))
+                logger.info(
+                    f"Lap completed (LapDist wrap {self._prev_lap_dist:.1f} -> {cur_ld:.1f}). "
+                    f"Bonus +{self.lap_completion_bonus}. LapCount={lc}"
+                )
+        self._prev_lap_dist = cur_ld
 
         r = r.reshape(-1)  # [N, 1] -> [N]
         return r
@@ -718,7 +772,7 @@ class AssettoCorsaEnv(Env, gym_utils.EzPickle):
 
         self.ep_reward = 0.
         self.ep_steps = 0  # reset steps after flushing the actions
-        self._last_lap_count = 1  # reset lap tracker for new episode
+        self._prev_lap_dist = None  # first real steps establish baseline; avoids spurious wrap vs prior episode
         return obs
 
     def get_info(self):

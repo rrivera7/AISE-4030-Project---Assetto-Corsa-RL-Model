@@ -16,7 +16,9 @@ class ReplayBufferConfigurator:
     """
 
     def __init__(self, buffer_size: int, optimize_memory_usage: bool = False):
+        # Store the maximum number of transitions the buffer can hold
         self.buffer_size = buffer_size
+        # Store the flag indicating whether to optimize memory usage
         self.optimize_memory_usage = optimize_memory_usage
 
     def get_buffer_kwargs(self):
@@ -27,6 +29,7 @@ class ReplayBufferConfigurator:
         Returns:
             dict: Buffer configuration dictionary.
         """
+        # Return a dictionary containing the memory optimization flag
         return {
             "optimize_memory_usage": self.optimize_memory_usage,
         }

@@ -1,155 +1,96 @@
 # AISE-4030 Project: Assetto Corsa Reinforcement Learning Model
 
-## This project involves the development and implementation of an autonomous driving agent for the Assetto Corsa simulation environment. The system utilizes the Soft Actor-Critic (SAC) algorithm, a state-of-the-art reinforcement learning framework, to train a model capable of navigating complex vehicle physics. The primary objective is to optimize lap times and vehicle stability using a BMW Z4 GT3 on the Monza circuit.
+## Overview
+This project involves the development and implementation of an autonomous driving agent for the Assetto Corsa simulation environment. The system utilizes both **Soft Actor-Critic (SAC)** and **Proximal Policy Optimization (PPO)** algorithms to train models capable of navigating complex vehicle physics. The primary objective is to optimize lap times and vehicle stability using a BMW Z4 GT3 on the Monza circuit, and to compare the performance of off-policy (SAC) vs. on-policy (PPO) reinforcement learning methods.
 
-# Installation and Setup
-## Prerequisites
-### Anaconda/Miniconda is required.
-### Use a Conda environment with Python 3.9 (the gym plugin defaults to an env name `p309`, which maps to Python 3.9 in this project setup).
+---
 
-## Environment Setup
+## Installation and Setup
+
+### Prerequisites
+- Anaconda/Miniconda is required.
+- Use a Conda environment with Python 3.9 (the gym plugin defaults to an env name `p309`, which maps to Python 3.9 in this project setup).
+
+### Environment Setup
 ```bash
 conda create -n p309 python=3.9 -y
 conda activate p309
 ```
 
-## Install the Gym Package
-### From the repository root:
+### Install the Gym Package
+From the repository root:
 ```bash
 cd assetto_corsa_gym
 pip install .
 cd ..
 ```
 
-## Install Core Training Dependencies
+### Install Core Training Dependencies
 ```bash
-pip install torch stable-baselines3 omegaconf
+pip install torch stable-baselines3 omegaconf pandas matplotlib
 ```
 
-## Run a Basic Environment Validation
-```bash
-python training_script.py
-```
+---
 
-## Notes
-### If your Conda env has a different name or Python executable path, update the plugin config accordingly (the gym plugin can also use an explicit `config_python_executable` path instead of the default Anaconda env lookup).
+## Usage: Training and Evaluation
 
-# Training, Checkpointing, and Results
+The main entry point is `training_script.py`, which reads parameters from `config.yaml`. 
 
-## Starting Training
-### Run the training script from the repository root:
+### 1. Training an Agent
+In `config.yaml`, set `mode: "train"` and choose your algorithm (`algorithm: "sac"` or `algorithm: "ppo"`).
 ```bash
 python training_script.py
 ```
-### This launches the full SAC training pipeline:
-1. Loads all hyperparameters and environment settings from `config.yaml`.
+This launches the full training pipeline:
+1. Loads hyperparameters from `config.yaml`.
 2. Creates the Assetto Corsa Gym environment.
-3. Instantiates the SAC agent with the configured policy network.
-4. Trains for `total_timesteps` steps (default: 1,000,000).
+3. Instantiates the chosen agent (SAC or PPO).
+4. Trains for `total_timesteps` steps.
+5. Generates learning and loss curves in `SAC_Results/` or `PPO_Results/`.
 
-### Key `config.yaml` training parameters:
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `train.total_timesteps` | `1000000` | Total environment steps to train |
-| `train.device` | `cuda` | `cuda` for GPU, `cpu` for CPU |
-| `train.save_path` | `./models/sac_assetto_corsa` | Directory for model checkpoints |
-| `eval.eval_freq` | `50000` | Steps between checkpoint saves |
-| `eval.log_loss_freq` | `100` | Steps between loss CSV writes |
+### 2. Evaluating a Trained Agent (Deployment)
+In `config.yaml`, set `mode: "evaluate"`, specify the `evaluate_model_path`, and set `eval.n_eval_episodes` (e.g., 50).
+```bash
+python training_script.py
+```
+**Note on Evaluation Saving:** During evaluation, the results are kept in memory and the `eval_results.csv` file is **only generated and saved after all episodes are completed**. If you stop the evaluation early (e.g., via Ctrl+C before reaching 50 episodes), the CSV file will not be created.
+
+---
 
 ## Checkpoints and Resuming Training
-### The training pipeline includes full checkpoint support so training can be stopped and resumed without losing progress.
 
-### Automatic Periodic Checkpoints
-- Every `eval_freq` steps (default: 50,000), a full checkpoint is saved to `models/sac_assetto_corsa/checkpoint_latest/`, containing:
-  - `model.zip` — SAC network weights and optimizer state.
-  - `replay_buffer.pkl` — The full replay buffer contents.
-  - `training_meta.json` — Training metadata (timestep count, episode count).
+The training pipeline includes full checkpoint support so training can be stopped and resumed without losing progress.
 
-### Graceful Shutdown (Ctrl+C / SIGTERM)
-- If the process is interrupted with **Ctrl+C** or receives a **SIGTERM** signal, a signal handler triggers an emergency checkpoint save before exiting.
-- This means you keep all progress up to the moment of interruption, not just the last periodic checkpoint.
+- **Periodic Checkpoints:** Saved automatically based on `eval_freq` to `checkpoint_latest/` (includes model weights, replay buffer for SAC, and metadata).
+- **Episode Checkpoints:** Saved every 50 episodes (e.g., `checkpoint_ep50`, `checkpoint_ep100`).
+- **Graceful Shutdown:** If the process is interrupted with **Ctrl+C** or receives a **SIGTERM** signal, an emergency checkpoint is saved before exiting.
+- **Resuming:** Simply re-run `python training_script.py`. It automatically checks for `checkpoint_latest/model.zip` and resumes training from the saved timestep count.
 
-### Resuming From a Checkpoint
-- Simply re-run `python training_script.py`. On startup, the script automatically checks for `checkpoint_latest/model.zip`.
-- If found, it loads the model weights, replay buffer, and metadata, then continues training from the saved timestep count.
-- If not found, it starts fresh.
-- The SB3 timestep counter is preserved (`reset_num_timesteps=False`), so logged metrics and learning schedules continue seamlessly.
+---
 
-### Manual Evaluation of a Saved Model
-```python
-# In training_script.py main(), comment out train_agent() and uncomment:
-evaluate_agent("./models/sac_assetto_corsa/sac_assetto_corsa_final")
-```
+## Folder Structure and Logged Metrics
 
-## Logged Metrics and Results
-### All training metrics are saved as CSV files in the `SAC_Results/` directory. These can be loaded for plotting or analysis without retraining.
+### `SAC_Results/` & `PPO_Results/`
+During training, metrics are saved as CSV files in their respective algorithm directories:
+- **`episode_log.csv`**: Logged at the end of *every episode* (timestep, episode, episode_reward, episode_length).
+- **`loss_log.csv`**: Logged periodically (actor/critic loss for SAC; policy/value/entropy loss for PPO).
+- **Generated Plots**: `learning_curve.png` and `loss_curves.png` are automatically generated at the end of training.
 
-### `SAC_Results/episode_log.csv`
-Logged at the end of **every episode**:
+### `Comparative_Plots/`
+This folder contains comparative analysis plots evaluating SAC vs. PPO across 4 key metrics:
+1. **`learning_speed.png`**: Compares how fast each algorithm reaches a target reward threshold.
+2. **`loss_convergence.png`**: Compares value-function and policy loss convergence trends.
+3. **`final_performance.png`**: Bar chart comparing the mean reward and standard deviation over the final N episodes.
+4. **`stability_variance.png`**: Overlays smoothed reward curves with ±1 standard deviation bands to compare training stability.
 
-| Column | Description |
-|--------|-------------|
-| `timestep` | Global environment step at episode end |
-| `episode` | Running episode number |
-| `episode_reward` | Cumulative (undiscounted) reward for the episode |
-| `episode_length` | Number of steps in the episode |
+---
 
-### `SAC_Results/loss_log.csv`
-Logged every `log_loss_freq` steps (default: 100):
+## Core Components and Architecture
 
-| Column | Description |
-|--------|-------------|
-| `timestep` | Global environment step |
-| `actor_loss` | SAC policy (actor) network loss |
-| `critic_loss` | SAC Q-network (critic) loss |
-| `ent_coef` | Current entropy coefficient (alpha) — the exploration parameter |
-| `ent_coef_loss` | Entropy coefficient tuning loss |
-
-### Generated Plots
-At the end of training, two PNG plots are saved to `SAC_Results/`:
-- **`learning_curve.png`** — Episode reward over time (raw + smoothed rolling average with std band).
-- **`loss_curves.png`** — Four-subplot figure showing actor loss, critic loss, entropy coefficient, and entropy coefficient loss over timesteps.
-
-### Loading Results for Custom Analysis
-```python
-import pandas as pd
-
-episodes = pd.read_csv("SAC_Results/episode_log.csv")
-losses = pd.read_csv("SAC_Results/loss_log.csv")
-```
-
-### Regenerating Plots Without Retraining
-```python
-from utils import plot_learning_curve, plot_loss_curves
-
-plot_learning_curve("./SAC_Results")
-plot_loss_curves("./SAC_Results")
-```
-
-# Core Components and Architecture
-## Current Implementation
-### training_script.py: Main entry point. Contains `train_agent()` (full training pipeline with automatic resume support and signal-handler-based emergency saves), `evaluate_agent()` (deterministic evaluation over N episodes), and `set_global_seeds()` for reproducibility.
-
-### sac_agent.py: `SACAgent` wrapper around SB3 SAC. Provides action selection, training, model save/load, and full checkpoint save/load (model weights + replay buffer + training metadata).
-
-### environment.py: Creates the environment by loading `config.yaml` with OmegaConf and calling `assettoCorsa.make_ac_env(...)` from `assetto_corsa_gym`.
-
-### config.yaml: Central configuration for Assetto Corsa environment parameters, SAC hyperparameters, training settings, and evaluation settings.
-
-### actor_critic.py: Defines `CustomTelemetryExtractor` (SB3 feature extractor class) for custom observation feature processing before policy/value networks.
-
-### replay_buffer.py: Defines `ReplayBufferConfigurator` as a utility for replay-buffer-related configuration (SB3 manages the actual buffer internally).
-
-### utils.py: Training utilities including `ModelCallback` (SB3 callback for periodic full checkpoints, per-step loss/entropy logging, and per-episode reward/length logging), `plot_learning_curve()`, and `plot_loss_curves()`.
-
-## Code Structure and Naming Conventions
-### The project follows modular, single-responsibility file naming so each file has a clear role:
-
-### `config.yaml` (fixed name): Hyperparameters, environment settings, execution modes, and file paths.
-### `environment.py` (fixed name): Environment creation, wrappers/preprocessing, and simulator hookup.
-### `{algorithm}_agent.py` (named after algorithm): RL agent logic (action selection, learning loop, save/load).
-### `{type}_network.py` (named after network type): Neural network architecture components.
-### `{type}_buffer.py` (named after buffer type): Replay/rollout memory components when applicable.
-### `training_script.py` (fixed name): Main entry point and orchestration for train/eval runs.
-### `utils.py` (fixed name): Shared utilities such as callbacks, plotting, logging helpers, config helpers, and related support functions.
-### `README.md` (fixed name): Project overview, setup/run guide, and design documentation.
+- **`config.yaml`**: Central configuration for environment parameters, hyperparameters, execution modes (`train` vs `evaluate`), and file paths.
+- **`training_script.py`**: Main entry point. Contains `train_agent()` and `evaluate_agent()`.
+- **`sac_agent.py` & `ppo_agent.py`**: Wrappers around SB3 algorithms. Provide action selection, training loops, and checkpoint management.
+- **`environment.py`**: Environment creation, wrappers/preprocessing, and simulator hookup.
+- **`actor_critic.py`**: Defines `CustomTelemetryExtractor` for custom observation feature processing.
+- **`replay_buffer.py`**: Configuration utilities for the replay buffer.
+- **`utils.py`**: Shared utilities including `ModelCallback`, `PPOModelCallback`, and all plotting functions for individual and comparative analysis.

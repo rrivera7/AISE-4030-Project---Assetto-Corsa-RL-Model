@@ -11,6 +11,13 @@ class TrackOccupancyGrid:
                 Depends on how the data was created
     """
     def __init__(self, track_grid_file, torch_device=None):
+        """
+        Initializes the TrackOccupancyGrid.
+
+        Args:
+            track_grid_file (str): Path to the track grid pickle file.
+            torch_device (torch.device, optional): Device to allocate tensors on.
+        """
         self.track_grid_file = track_grid_file
         self.torch_device = torch_device
 
@@ -69,6 +76,12 @@ class TrackOccupancyGrid:
             return self.grid_map_torch[index[:,0], index[:,1]]
 
     def get_grid_points(self):
+        """
+        Generates grid points for debugging purposes.
+
+        Returns:
+            tuple: A tuple containing points, x_range, and y_range.
+        """
         ''' for debugging '''
         x_range = np.arange(self.min_x, self.max_x, self.cell_size)
         y_range = np.arange(self.min_y, self.max_y, self.cell_size)
@@ -78,6 +91,12 @@ class TrackOccupancyGrid:
         return points, x_range, y_range
 
     def read_file(self):
+        """
+        Reads the track grid pickle file.
+
+        Returns:
+            dict: The loaded track map data.
+        """
         with open(self.track_grid_file,'rb') as f:
             track_map = pickle.load(f)
         return track_map

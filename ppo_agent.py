@@ -26,16 +26,21 @@ class PPOAgent:
         self.env = env
         self.config = config
 
+        # Define the policy keyword arguments, extracting the network architecture from config
         policy_kwargs = dict(
             net_arch=list(config.policy.net_arch),
         )
 
+        # Check if a custom feature extractor is requested in the configuration
         if config.policy.get("use_custom_extractor", False):
+            # Assign the custom extractor class to the policy arguments
             policy_kwargs["features_extractor_class"] = CustomTelemetryExtractor
+            # Provide the required arguments for the custom extractor
             policy_kwargs["features_extractor_kwargs"] = dict(
                 features_dim=config.policy.features_dim
             )
 
+        # Initialize the PPO model with the specified hyperparameters
         self.model = PPO(
             "MlpPolicy",
             env,
@@ -66,6 +71,7 @@ class PPOAgent:
         Returns:
             np.ndarray: The chosen action vector [steer, throttle, brake].
         """
+        # Predict the next action using the PPO model, optionally deterministically
         action, _states = self.model.predict(state, deterministic=evaluate)
         return action
 
@@ -78,6 +84,7 @@ class PPOAgent:
             callback (BaseCallback or list): SB3 callbacks for logging/checkpointing.
             log_interval (int): How often (in episodes) SB3 prints progress.
         """
+        # Execute the main learning loop of the PPO model
         self.model.learn(
             total_timesteps=total_timesteps,
             callback=callback,
@@ -91,7 +98,9 @@ class PPOAgent:
         Args:
             filepath (str): Destination path (without extension; SB3 adds .zip).
         """
+        # Ensure the directory for the save path exists
         os.makedirs(os.path.dirname(filepath), exist_ok=True)
+        # Save the model to the specified filepath
         self.model.save(filepath)
         print(f"Model saved to {filepath}")
 
@@ -103,6 +112,7 @@ class PPOAgent:
         Args:
             filepath (str): Path to the saved model file.
         """
+        # Load the model from disk and associate it with the current environment and device
         self.model = PPO.load(filepath, env=self.env, device=self.config.train.device)
         print(f"Model loaded from {filepath}")
 
@@ -114,16 +124,21 @@ class PPOAgent:
         Args:
             path (str): Directory to save the checkpoint into.
         """
+        # Create the checkpoint directory if it doesn't already exist
         os.makedirs(path, exist_ok=True)
+        # Define paths for the model weights and the metadata JSON file
         model_path = os.path.join(path, "model")
         meta_path = os.path.join(path, "training_meta.json")
 
+        # Save the PPO model weights
         self.model.save(model_path)
 
+        # Prepare a dictionary containing the current training progress metadata
         meta = {
             "num_timesteps": self.model.num_timesteps,
             "num_episodes": getattr(self.model, '_episode_num', 0),
         }
+        # Write the metadata to a JSON file
         with open(meta_path, 'w') as f:
             json.dump(meta, f)
 
@@ -139,18 +154,23 @@ class PPOAgent:
         Returns:
             dict: Training metadata (num_timesteps, num_episodes).
         """
+        # Define paths for the model weights and the metadata JSON file
         model_path = os.path.join(path, "model")
         meta_path = os.path.join(path, "training_meta.json")
 
+        # Load the PPO model weights and bind to the current environment
         self.model = PPO.load(model_path, env=self.env, device=self.config.train.device)
         print(f"Model loaded from {model_path}")
 
+        # Initialize an empty dictionary for metadata
         meta = {}
+        # If the metadata file exists, read and parse it
         if os.path.exists(meta_path):
             with open(meta_path, 'r') as f:
                 meta = json.load(f)
             print(f"Training metadata loaded: {meta}")
 
+        # Return the loaded metadata
         return meta
 
     def resume_train(self, total_timesteps, callback=None, log_interval=10):
@@ -162,6 +182,7 @@ class PPOAgent:
             callback (BaseCallback or list): SB3 callbacks.
             log_interval (int): How often SB3 prints progress.
         """
+        # Continue training the model, ensuring the timestep counter is not reset
         self.model.learn(
             total_timesteps=total_timesteps,
             callback=callback,

@@ -20,8 +20,13 @@ class NormalizeObservationWrapper(gym.ObservationWrapper):
         env (gym.Env): The base Assetto Corsa Gym environment.
     """
     def __init__(self, env):
+        # Initialize the base ObservationWrapper with the provided environment
         super().__init__(env)
+        
+        # Extract the shape of the original observation space
         obs_shape = env.observation_space.shape
+        
+        # Define a new observation space with the same shape but explicitly float32 dtype
         self.observation_space = gym.spaces.Box(
             low=-np.inf, high=np.inf, shape=obs_shape, dtype=np.float32
         )
@@ -36,6 +41,7 @@ class NormalizeObservationWrapper(gym.ObservationWrapper):
         Returns:
             np.ndarray: Observation guaranteed to be float32.
         """
+        # Convert the incoming observation to a numpy array of type float32
         return np.asarray(obs, dtype=np.float32)
 
 
@@ -51,16 +57,20 @@ def create_env(config, log_dir='./models/sac_assetto_corsa/logs'):
     Returns:
         gym.Env: The ready-to-train environment instance.
     """
+    # Retrieve the working directory from the configuration, defaulting to current directory
     work_dir = config.get('work_dir', './')
 
-    # Create the base AC environment from the gym package
+    # Create the base AC environment from the gym package using the provided config
     env = assettoCorsa.make_ac_env(cfg=config, work_dir=work_dir)
 
-    # Wrap to guarantee float32 observations
+    # Wrap the environment to guarantee float32 observations for SB3 compatibility
     env = NormalizeObservationWrapper(env)
 
-    # SB3 Monitor logs episode reward, length, and wall-clock time to CSV
+    # Ensure the logging directory exists, creating it if necessary
     os.makedirs(log_dir, exist_ok=True)
+    
+    # Wrap the environment with SB3 Monitor to log episode reward, length, and wall-clock time to CSV
     env = Monitor(env, filename=os.path.join(log_dir, 'monitor.csv'))
 
+    # Return the fully configured and wrapped environment
     return env
